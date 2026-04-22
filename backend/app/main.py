@@ -4,11 +4,12 @@ import shutil
 import os
 import uuid
 import subprocess
+import asyncio
 from app.inference import predict
 
 app = FastAPI()
 
-# ✅ CORS
+# ✅ CORS (open for hackathon)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,16 +18,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ✅ Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "..", "temp")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+# ✅ Health check
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 
+# ✅ Convert audio to WAV
 def convert_to_wav(input_path: str, output_path: str):
     command = [
         "ffmpeg",
@@ -48,6 +52,7 @@ def convert_to_wav(input_path: str, output_path: str):
         raise Exception("FFmpeg conversion failed")
 
 
+# ✅ Prediction endpoint
 @app.post("/predict")
 async def detect(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
@@ -56,14 +61,19 @@ async def detect(file: UploadFile = File(...)):
     wav_path = os.path.join(UPLOAD_DIR, f"{file_id}.wav")
 
     try:
-        # save file
+        # ✅ Validate file
+        if not file.filename.endswith((".webm", ".wav", ".mp3")):
+            raise HTTPException(status_code=400, detail="Invalid file format")
+
+        # ✅ Save uploaded file
         with open(webm_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # ✅ Convert to WAV
         convert_to_wav(webm_path, wav_path)
 
-        # 👇 THIS triggers lazy loading indirectly
-        result = predict(wav_path)
+        # ✅ Call HF model (non-blocking)
+        result = await asyncio.to_thread(predict, wav_path)
 
         return {
             "success": True,
@@ -71,11 +81,21 @@ async def detect(file: UploadFile = File(...)):
             "confidence": float(result.get("confidence", 0))
         }
 
+    except HTTPException as e:
+        raise e
+
     except Exception as e:
         print("🔥 ERROR:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
     finally:
+        # ✅ Cleanup temp files
         for path in [webm_path, wav_path]:
-            if os.path.exists(path):
-                os.remove(path)
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except:
+                pass
