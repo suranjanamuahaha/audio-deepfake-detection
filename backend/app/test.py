@@ -1,10 +1,9 @@
-from gradio_client import Client, file
+import requests
 
-client = Client("https://suramuahaha-audio-deepfake-detection.hf.space")
+url = "https://audio-deepfake-detection-uco.onrender.com/predict"
 
-result = client.predict(
-    file("test.mp3"),   # 🔥 THIS IS THE FIX
-    api_name="/predict"
-)
+with open("test.mp3", "rb") as f:
+    res = requests.post(url, files={"file": f})
 
-print(result)
+print(res.status_code)
+print(res.text)
