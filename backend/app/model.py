@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class DeepfakeDetector(nn.Module):
@@ -17,3 +18,21 @@ class DeepfakeDetector(nn.Module):
     def forward(self, x):
         x = x.mean(dim=1)
         return self.net(x)
+
+
+# ✅ LAZY LOAD PART
+_model = None
+
+def get_model():
+    global _model
+
+    if _model is None:
+        print("🔥 Loading model...")
+
+        _model = DeepfakeDetector()
+        _model.load_state_dict(
+            torch.load("model.pth", map_location="cpu")
+        )
+        _model.eval()
+
+    return _model

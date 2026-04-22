@@ -8,39 +8,47 @@ from app.utils import processor
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# 🔥 Base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# 🔥 Load wav2vec with cache (prevents repeated downloads)
-print("Loading wav2vec...")
-wav2vec = Wav2Vec2Model.from_pretrained(
-    "facebook/wav2vec2-base",
-    cache_dir=os.path.join(BASE_DIR, "hf_cache")
-).to(device)
-
-# 🔥 Load classifier
-print("Loading classifier...")
 MODEL_PATH = os.path.join(BASE_DIR, "saved_models", "model.pt")
 
-model = DeepfakeDetector()
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-model.to(device)
-model.eval()
+# ✅ LAZY GLOBALS
+_wav2vec = None
+_classifier = None
 
-print("Model ready")
+
+def get_models():
+    global _wav2vec, _classifier
+
+    if _wav2vec is None:
+        print("🔥 Loading wav2vec...")
+        _wav2vec = Wav2Vec2Model.from_pretrained(
+            "facebook/wav2vec2-base",
+            cache_dir=os.path.join(BASE_DIR, "hf_cache")
+        ).to(device)
+
+    if _classifier is None:
+        print("🔥 Loading classifier...")
+        _classifier = DeepfakeDetector()
+        _classifier.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+        _classifier.to(device)
+        _classifier.eval()
+
+    return _wav2vec, _classifier
 
 
 def predict(file_path):
     try:
         print("🎧 Loading:", file_path)
 
-        # ✅ Load audio safely
+        wav2vec, model = get_models()  # 👈 LAZY LOAD HERE
+
+        # ✅ Load audio
         audio, sr = librosa.load(file_path, sr=16000)
 
         if audio is None or len(audio) == 0:
             raise ValueError("Empty audio received")
 
-        # ✅ Fix length (2 sec = 32000 samples)
+        # ✅ Fix length
         max_len = 32000
 
         if len(audio) > max_len:

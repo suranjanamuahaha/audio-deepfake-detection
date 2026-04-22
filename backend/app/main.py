@@ -8,7 +8,7 @@ from app.inference import predict
 
 app = FastAPI()
 
-# ✅ CORS (open for hackathon)
+# ✅ CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,19 +17,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Stable paths (Railway-safe)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "..", "temp")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# ✅ Health check
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 
-# ✅ Convert to WAV using ffmpeg
 def convert_to_wav(input_path: str, output_path: str):
     command = [
         "ffmpeg",
@@ -59,20 +56,13 @@ async def detect(file: UploadFile = File(...)):
     wav_path = os.path.join(UPLOAD_DIR, f"{file_id}.wav")
 
     try:
-        # ✅ Save uploaded file
+        # save file
         with open(webm_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        if not os.path.exists(webm_path):
-            raise Exception("WEBM file not saved")
-
-        # ✅ Convert to WAV
         convert_to_wav(webm_path, wav_path)
 
-        if not os.path.exists(wav_path):
-            raise Exception("WAV conversion failed")
-
-        # ✅ Run model
+        # 👇 THIS triggers lazy loading indirectly
         result = predict(wav_path)
 
         return {
@@ -86,10 +76,6 @@ async def detect(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        # ✅ Always cleanup
         for path in [webm_path, wav_path]:
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-            except:
-                pass
+            if os.path.exists(path):
+                os.remove(path)
