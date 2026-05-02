@@ -9,7 +9,6 @@ Developed as part of **PSB Hackathon 2026 in collaboration with IIT Kharagpur**,
 The system integrates deep learning-based speech representation models with a scalable backend pipeline to provide proactive fraud detection before financial damage occurs.
 
 Prototype: [https://audio-deepfake-detection-pink.vercel.app/](https://audio-deepfake-detection-pink.vercel.app/)
-GitHub: [https://github.com/suranjanamuahaha/audio-deepfake-detection](https://github.com/suranjanamuahaha/audio-deepfake-detection)
 
 ---
 
