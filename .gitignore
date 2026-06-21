@@ -36,3 +36,4 @@ backend/hf_cache/
 
 saved_models
 *.pt
+*.png
