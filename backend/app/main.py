@@ -77,7 +77,7 @@ async def detect(file: UploadFile = File(...)):
 
         return {
             "success": True,
-            "label": result.get("label"),
+            "label": result.get("result"),
             "confidence": float(result.get("confidence", 0))
         }
 
