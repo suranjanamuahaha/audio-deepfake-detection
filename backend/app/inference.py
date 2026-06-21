@@ -1,48 +1,154 @@
-from gradio_client import Client, file
+import os
+import torch
+import librosa
+import torch.nn.functional as F
 
-client = Client("https://suramuahaha-audio-deepfake-detection.hf.space")
+from transformers import (
+    WavLMModel,
+    AutoFeatureExtractor
+)
+
+from app.model import DeepfakeDetector
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+print("Loading WavLM...")
+
+wavlm = WavLMModel.from_pretrained(
+    "microsoft/wavlm-base-plus"
+).to(device)
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
+wavlm_path = os.path.join(
+    BASE_DIR,
+    "saved_models",
+    "wavlm.pt"
+)
+
+wavlm.load_state_dict(
+    torch.load(
+        wavlm_path,
+        map_location=device
+    )
+)
+
+wavlm.eval()
+
+print("Loading classifier...")
+
+model_path = os.path.join(
+    BASE_DIR,
+    "saved_models",
+    "best_model.pt"
+)
+
+model = DeepfakeDetector()
+
+model.load_state_dict(
+    torch.load(
+        model_path,
+        map_location=device
+    )
+)
+
+model.to(device)
+model.eval()
+
+feature_extractor = AutoFeatureExtractor.from_pretrained(
+    "microsoft/wavlm-base-plus"
+)
+
+print("Model Ready")
 
 
-def predict(file_path: str):
-    try:
-        print("🎧 Sending to HF:", file_path)
+def predict(file_path):
 
-        result = client.predict(
-            file(file_path),
-            api_name="/predict"
+    audio, sr = librosa.load(
+        file_path,
+        sr=16000
+    )
+
+    max_len = 32000
+
+    if len(audio) > max_len:
+
+        audio = audio[:max_len]
+
+    else:
+
+        audio = torch.nn.functional.pad(
+            torch.tensor(audio),
+            (
+                0,
+                max_len - len(audio)
+            )
+        ).numpy()
+
+    inputs = feature_extractor(
+        audio,
+        sampling_rate=16000,
+        return_tensors="pt",
+        padding=True
+    )
+
+    inputs = {
+        k: v.to(device)
+        for k, v in inputs.items()
+    }
+
+    with torch.no_grad():
+
+        features = wavlm(
+            **inputs
+        ).last_hidden_state
+
+        output = model(
+            features
         )
 
-        print("HF RAW RESULT:", result)  # 🔥 DEBUG
+    probs = F.softmax(
+        output,
+        dim=1
+    )
 
-        # ✅ SAFE PARSING
-        label = "real"
-        confidence = 0.0
+    pred = torch.argmax(
+        probs,
+        dim=1
+    ).item()
 
-        if isinstance(result, str) and "(" in result:
-            try:
-                label_part, conf_part = result.strip().split("(")
-                label = label_part.strip().lower()
-                confidence = float(conf_part.replace(")", "").strip())
-            except:
-                print("⚠️ Parsing failed, using fallback")
+    confidence = torch.max(
+        probs
+    ).item()
 
-        # fallback if parsing fails
-        if label not in ["real", "deepfake"]:
-            label = "real"
+    result = (
+        "Deepfake"
+        if pred == 1
+        else "Real"
+    )
 
-        confidence = max(0.0, min(1.0, float(confidence)))
+    return {
+        "result": result,
+        "confidence": round(
+            confidence,
+            4
+        )
+    }
 
-        print(f"Prediction: {label} ({confidence:.3f})")
 
-        return {
-            "label": label,
-            "confidence": confidence
-        }
+if __name__ == "__main__":
 
-    except Exception as e:
-        print("🔥 HF ERROR:", str(e))
+    test_path = os.path.join(
+        BASE_DIR,
+        "test.wav"
+    )
 
-        return {
-            "label": "error",
-            "confidence": 0.0
-        }
+    print(
+        predict(
+            test_path
+        )
+    )

@@ -1,9 +1,12 @@
-from transformers import Wav2Vec2Processor
+from transformers import AutoFeatureExtractor
 
-processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
+feature_extractor = AutoFeatureExtractor.from_pretrained(
+    "microsoft/wavlm-base-plus"
+)
 
 def preprocess(audio_batch):
-    return processor(
+
+    return feature_extractor(
         list(audio_batch),
         sampling_rate=16000,
         return_tensors="pt",

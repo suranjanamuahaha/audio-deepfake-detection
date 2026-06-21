@@ -1,38 +1,36 @@
-import torch
 import torch.nn as nn
 
+from app.lcnn import LCNN
+from app.attention_pooling import AttentionPooling
+
+
 class DeepfakeDetector(nn.Module):
-    def __init__(self, input_dim=768):
+
+    def __init__(self):
+
         super().__init__()
 
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 512),
+        self.lcnn = LCNN()
+
+        self.pool = AttentionPooling(
+            input_dim=64
+        )
+
+        self.classifier = nn.Sequential(
+
+            nn.Linear(64, 128),
+
             nn.ReLU(),
+
             nn.Dropout(0.3),
-            nn.Linear(512, 128),
-            nn.ReLU(),
-            nn.Dropout(0.2),
+
             nn.Linear(128, 2)
         )
 
     def forward(self, x):
-        x = x.mean(dim=1)
-        return self.net(x)
 
+        x = self.lcnn(x)
 
-# ✅ LAZY LOAD PART
-_model = None
+        x = self.pool(x)
 
-def get_model():
-    global _model
-
-    if _model is None:
-        print("🔥 Loading model...")
-
-        _model = DeepfakeDetector()
-        _model.load_state_dict(
-            torch.load("model.pth", map_location="cpu")
-        )
-        _model.eval()
-
-    return _model
+        return self.classifier(x)
