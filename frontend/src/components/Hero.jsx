@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, Square, ShieldAlert, ShieldCheck, Activity } from "lucide-react";
+import { Client } from "@gradio/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Realtime Waveform (recording input visualiser)
@@ -387,19 +388,41 @@ export const Hero = () => {
   const sendAudio = async (blob) => {
     try {
       setLoading(true);
-      const fd = new FormData();
-      fd.append("file", blob, "audio.webm");
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/predict`, { method: "POST", body: fd });
-      const data = await res.json();
 
-      // Mark result as received — the interval will stop on its next tick
+      const app = await Client.connect(
+        "suramuahaha/audio-deepfake-detection"
+      );
+
+      const file = new File(
+        [blob],
+        "audio.webm",
+        { type: "audio/webm" }
+      );
+
+      const result = await app.predict(
+        "/predict",
+        [file]
+      );
+
+      console.log(result);
+
+      const data = result.data?.[0];
+
       resultReceivedRef.current = true;
       clearInterval(intervalRef.current);
 
-      setResult({ label: data.label, confidence: data.confidence });
-      if (data.label === "deepfake") {
+      setResult({
+        label: data.label,
+        confidence: data.confidence
+      });
+
+      if (
+        data.label === "deepfake" ||
+        data.label === "fake"
+      ) {
         setShowPopup(true);
       }
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -407,7 +430,7 @@ export const Hero = () => {
     }
   };
 
-  const isDeepfake = result?.label === "deepfake";
+  const isDeepfake = result?.label === "deepfake" || result?.label === "fake";
   const accentColor = isDeepfake ? "#ef4444" : "#22c55e";
   const gradientBar = isDeepfake
     ? "linear-gradient(90deg,#1a0000,#7f1d1d,#dc2626,#fbbf24,#fff)"
