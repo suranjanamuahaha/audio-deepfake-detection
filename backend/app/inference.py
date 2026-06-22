@@ -24,18 +24,18 @@ BASE_DIR = os.path.dirname(
     )
 )
 
-wavlm_path = os.path.join(
-    BASE_DIR,
-    "saved_models",
-    "wavlm.pt"
-)
+# wavlm_path = os.path.join(
+#     BASE_DIR,
+#     "saved_models",
+#     "wavlm.pt"
+# )
 
-wavlm.load_state_dict(
-    torch.load(
-        wavlm_path,
-        map_location=device
-    )
-)
+# wavlm.load_state_dict(
+#     torch.load(
+#         wavlm_path,
+#         map_location=device
+#     )
+# )
 
 wavlm.eval()
 
@@ -126,9 +126,9 @@ def predict(file_path):
     ).item()
 
     result = (
-        "Deepfake"
+        "deepfake"
         if pred == 1
-        else "Real"
+        else "real"
     )
 
     return {
