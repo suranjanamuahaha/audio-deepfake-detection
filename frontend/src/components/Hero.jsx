@@ -168,20 +168,23 @@ const Spectrogram = ({ audioBuffer, isDeepfake }) => {
     }
 
     // Paint pixel grid
+    const leftPad = 42;
+    const plotW = Math.max(1, W - leftPad);
     const imgData = ctx.createImageData(W, H);
     const buf = imgData.data;
     const logMin = Math.log(1 + 1);
     const logMax = Math.log(freqBins + 1);
 
-    for (let x = 0; x < W; x++) {
-      const fi = Math.floor((x / W) * maxFrames);
+    for (let x = 0; x < plotW; x++) {
+      const fi = Math.floor((x / plotW) * maxFrames);
       const mags = magMatrix[Math.min(fi, magMatrix.length - 1)];
+      const canvasX = leftPad + x;
       for (let y = 0; y < H; y++) {
         const logPos = logMax - (y / H) * (logMax - logMin);
         const bin = Math.min(freqBins - 1, Math.max(0, Math.round(Math.exp(logPos) - 1)));
         const norm = Math.max(0, Math.min(1, (mags[bin] - floorDb) / dynRange));
         const [r, g, b] = isDeepfake ? colourDeepfake(norm) : colourReal(norm);
-        const p = (y * W + x) * 4;
+        const p = (y * W + canvasX) * 4;
         buf[p] = r; buf[p + 1] = g; buf[p + 2] = b; buf[p + 3] = 255;
       }
     }
@@ -189,7 +192,7 @@ const Spectrogram = ({ audioBuffer, isDeepfake }) => {
 
     // Frequency grid lines + labels
     const nyquist = audioBuffer.sampleRate / 2;
-    const freqTicks = [8000, 4000, 2000, 1000, 500, 250].filter(f => f < nyquist);
+    const freqTicks = [8000, 6000, 4000, 2000, 1000, 500, 250].filter(f => f < nyquist);
     ctx.font = "9px 'Courier New', monospace";
     freqTicks.forEach(freq => {
       const bin = Math.max(1, Math.floor((freq / nyquist) * freqBins));
@@ -218,6 +221,7 @@ const Spectrogram = ({ audioBuffer, isDeepfake }) => {
   return (
     <canvas
       ref={canvasRef}
+      className="block w-full"
       style={{ width: "100%", height: "160px", display: "block", borderRadius: "6px" }}
     />
   );
@@ -477,7 +481,7 @@ export const Hero = () => {
 
       {/* ── RESULT CARD ── */}
       {result && (
-        <div className="mt-6 w-full max-w-[500px] mb-16" style={{ animation: "fadeSlideUp 0.45s ease forwards" }}>
+        <div className="mt-6 w-full max-w-[800px] mb-16" style={{ animation: "fadeSlideUp 0.45s ease forwards" }}>
 
           {/* Verdict */}
           <div className="rounded-t-2xl px-6 pt-6 pb-5 border-t border-x"
@@ -535,7 +539,7 @@ export const Hero = () => {
             </div>
 
             {/* Canvas */}
-            <div className="px-3 pt-3 pb-2">
+            <div className="w-full px-6 pt-4 pb-3">
               {audioBuffer
                 ? <Spectrogram audioBuffer={audioBuffer} isDeepfake={isDeepfake} />
                 : <div className="h-40 flex items-center justify-center text-gray-600 text-xs font-mono">No audio data</div>
