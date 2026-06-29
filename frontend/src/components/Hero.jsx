@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, Square, ShieldAlert, ShieldCheck, Activity } from "lucide-react";
+import { getApiUrl } from "../api/client";
 // import { Client } from "@gradio/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -395,7 +396,7 @@ export const Hero = () => {
     const token = localStorage.getItem("datadefenders_token");
 
     const response = await fetch(
-        "http://127.0.0.1:8000/predict",
+        `${getApiUrl()}/predict`,
         {
             method: "POST",
             headers: token

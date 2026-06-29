@@ -196,9 +196,10 @@ async def detect(
                         label,
                         confidence,
                     )
-            except Exception:
-                # Ignore invalid/expired tokens and continue with prediction
-                pass
+
+            except Exception as e:
+                print("SAVE ERROR:", repr(e))
+                raise
 
         return {
             "success": True,
