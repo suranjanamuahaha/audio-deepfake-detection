@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, Square, ShieldAlert, ShieldCheck, Activity } from "lucide-react";
-import { Client } from "@gradio/client";
+// import { Client } from "@gradio/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Realtime Waveform (recording input visualiser)
@@ -386,49 +386,54 @@ export const Hero = () => {
   };
 
   const sendAudio = async (blob) => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const app = await Client.connect(
-        "suramuahaha/audio-deepfake-detection"
-      );
+    const form = new FormData();
+    form.append("file", blob, "audio.webm");
 
-      const file = new File(
-        [blob],
-        "audio.webm",
-        { type: "audio/webm" }
-      );
+    const token = localStorage.getItem("datadefenders_token");
 
-      const result = await app.predict(
-        "/predict",
-        [file]
-      );
+    const response = await fetch(
+        "http://127.0.0.1:8000/predict",
+        {
+            method: "POST",
+            headers: token
+                ? {
+                      Authorization: `Bearer ${token}`,
+                  }
+                : {},
+            body: form,
+        }
+    );
 
-      console.log(result);
+    const data = await response.json();
 
-      const data = result.data?.[0];
+    console.log(data);
 
-      resultReceivedRef.current = true;
-      clearInterval(intervalRef.current);
+    resultReceivedRef.current = true;
+    clearInterval(intervalRef.current);
 
-      setResult({
-        label: data.label,
-        confidence: data.confidence
-      });
-
-      if (
-        data.label === "deepfake" ||
-        data.label === "fake"
-      ) {
-        setShowPopup(true);
-      }
-
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+    if (!data.success) {
+      throw new Error(data.error);
     }
-  };
+
+    // We'll adjust these two lines once we see the backend response
+    setResult(data.result);
+
+    if (
+      data.result?.label === "deepfake" ||
+      data.result?.label === "fake"
+    ) {
+      setShowPopup(true);
+    }
+
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const isDeepfake = result?.label === "deepfake" || result?.label === "fake";
   const accentColor = isDeepfake ? "#ef4444" : "#22c55e";

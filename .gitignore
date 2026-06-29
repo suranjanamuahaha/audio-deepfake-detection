@@ -37,3 +37,6 @@ backend/hf_cache/
 saved_models
 *.pt
 *.png
+
+backend/data/app.db
+frontend/.env
