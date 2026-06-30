@@ -16,8 +16,7 @@ import subprocess
 import asyncio
 from contextlib import asynccontextmanager
 
-
-from app.inference import predict
+from gradio_client import Client, handle_file
 from app.database import (
     init_db,
     create_user,
@@ -46,6 +45,8 @@ from app.auth import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "..", "temp")
+
+client = Client("suramuahaha/audio-deepfake-detection")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -197,13 +198,23 @@ async def detect(
         else:
             convert_to_wav(input_path, wav_path)
 
-        result = await asyncio.to_thread(predict, wav_path)
+        result = await asyncio.to_thread(
+            client.predict,
+            handle_file(wav_path),
+            api_name="/predict",
+        )
 
-        label = result.get("result")
+        label = result.get("label")
         confidence = float(result.get("confidence", 0))
 
         if label and is_spam_label(label):
-            log_spam_detection(label, confidence)
+            try:
+                log_spam_detection(
+                    label,
+                    confidence,
+                )
+            except Exception as e:
+                print("History save failed:", e)
 
         return {
             "success": True,
