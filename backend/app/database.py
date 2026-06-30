@@ -22,10 +22,19 @@ def init_db():
 
             CREATE TABLE IF NOT EXISTS spam_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
                 label TEXT NOT NULL,
                 confidence REAL NOT NULL,
-                detected_at TEXT NOT NULL,
+                detected_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS api_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                api_key TEXT UNIQUE NOT NULL,
+                name TEXT DEFAULT 'Default Key',
+                active INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL,
+                last_used TEXT,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             );
             """
@@ -43,91 +52,149 @@ def get_connection():
         conn.close()
 
 
-def create_user(username: str, password_hash: str):
+# ---------------- USERS ---------------- #
+
+def create_user(username: str, password_hash: str) -> int:
     now = datetime.now(timezone.utc).isoformat()
 
     with get_connection() as conn:
         cursor = conn.execute(
-            """
-            INSERT INTO users(username,password_hash,created_at)
-            VALUES(?,?,?)
-            """,
+            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
             (username, password_hash, now),
         )
-
         return cursor.lastrowid
 
 
 def get_user_by_username(username: str):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM users WHERE username=?",
+            "SELECT * FROM users WHERE username = ?",
             (username,),
         ).fetchone()
 
         return dict(row) if row else None
 
 
-def user_count():
+def get_user_by_id(user_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT COUNT(*) as count FROM users"
+            "SELECT * FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+
+        return dict(row) if row else None
+
+
+def user_count() -> int:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM users"
         ).fetchone()
 
         return row["count"]
 
 
-def log_spam_detection(user_id, label, confidence):
+# ---------------- API KEYS ---------------- #
+
+def create_api_key(user_id: int, api_key: str, name: str = "Default Key"):
     now = datetime.now(timezone.utc).isoformat()
 
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO spam_history(
-                user_id,
-                label,
-                confidence,
-                detected_at
-            )
-            VALUES(?,?,?,?)
+            INSERT INTO api_keys (user_id, api_key, name, created_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (
-                user_id,
-                label,
-                confidence,
-                now,
-            ),
+            (user_id, api_key, name, now),
         )
 
         return cursor.lastrowid
 
 
-def get_spam_history(user_id, limit=100):
+def get_api_key(api_key: str):
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT *
+            FROM api_keys
+            WHERE api_key = ? AND active = 1
+            """,
+            (api_key,),
+        ).fetchone()
+
+        return dict(row) if row else None
+
+
+def list_api_keys(user_id: int):
     with get_connection() as conn:
         rows = conn.execute(
             """
-            SELECT
-                id,
-                label,
-                confidence,
-                detected_at
+            SELECT id, name, created_at, last_used, active
+            FROM api_keys
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        ).fetchall()
+
+        return [dict(row) for row in rows]
+
+
+def revoke_api_key(key_id: int):
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE api_keys
+            SET active = 0
+            WHERE id = ?
+            """,
+            (key_id,),
+        )
+
+
+def update_last_used(api_key: str):
+    now = datetime.now(timezone.utc).isoformat()
+
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE api_keys
+            SET last_used = ?
+            WHERE api_key = ?
+            """,
+            (now, api_key),
+        )
+
+
+def log_spam_detection(label: str, confidence: float) -> int:
+    now = datetime.now(timezone.utc).isoformat()
+
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO spam_history (label, confidence, detected_at)
+            VALUES (?, ?, ?)
+            """,
+            (label, confidence, now),
+        )
+
+        return cursor.lastrowid
+
+
+def get_spam_history(limit: int = 100):
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, label, confidence, detected_at
             FROM spam_history
-            WHERE user_id=?
             ORDER BY detected_at DESC
             LIMIT ?
             """,
-            (
-                user_id,
-                limit,
-            ),
+            (limit,),
         ).fetchall()
 
-        return [dict(r) for r in rows]
+        return [dict(row) for row in rows]
 
 
-def is_spam_label(label):
-    return label.lower() in {
-        "deepfake",
-        "fake",
-        "spam",
-    }
+def is_spam_label(label: str) -> bool:
+    return label.lower() in {"deepfake", "fake", "spam"}
