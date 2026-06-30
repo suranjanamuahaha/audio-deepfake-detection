@@ -6,3 +6,5 @@ requests
 
 bcrypt
 python-jose[cryptography]
+
+slowapi

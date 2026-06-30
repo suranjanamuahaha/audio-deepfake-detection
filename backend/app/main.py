@@ -207,8 +207,10 @@ async def detect(
 
         return {
             "success": True,
-            "label": label,
-            "confidence": confidence,
+            "result": {
+                "label": label,
+                "confidence": confidence,
+            },
         }
 
     except HTTPException as e:
