@@ -89,26 +89,47 @@ export default function SpamHistory() {
           )}
 
           {!loading && !error && items.length > 0 && (
-            <div className="divide-y divide-white/5">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                >
-                  <div>
-                    <p className="font-semibold text-red-400 capitalize">{item.label}</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Confidence: {(item.confidence * 100).toFixed(1)}%
-                    </p>
-                  </div>
+            <>
+              <div className="divide-y divide-white/5">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                  >
+                    <div>
+                      <p className="font-semibold text-red-400 capitalize">{item.label}</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Confidence: {(item.confidence * 100).toFixed(1)}%
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-300">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span>{formatDetectedAt(item.detected_at)}</span>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <span>{formatDetectedAt(item.detected_at)}</span>
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              <div className="mt-6 px-6 py-5 rounded-b-2xl bg-neutral-950 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-gray-400">
+                    If you believe this log contains fraud or deepfake activity, report it immediately to the government cyber crime portal.
+                  </p>
+                  <p className="text-sm text-white font-semibold mt-2">
+                    Cyber Crime Helpline: <span className="text-red-400">1930</span>
+                  </p>
                 </div>
-              ))}
-            </div>
+                <a
+                  href="https://cybercrime.gov.in/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
+                >
+                  Report to Cyber Crime Portal
+                </a>
+              </div>
+            </>
           )}
         </div>
       </div>
