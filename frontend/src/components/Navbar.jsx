@@ -8,8 +8,8 @@ export const NavBar = () => {
 
     const navLinks = [
         { name: "Home", path: "/" },
-        { name: "Contact", id: "contact" },
-        { name: "About", path: "/" },
+        { name: "Process", id: "process" },
+        { name: "About", id: "about" },
     ];
 
     const [isScrolled, setIsScrolled] = useState(false);
@@ -52,7 +52,7 @@ export const NavBar = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
                 <img
-                    src="../logo1.jpeg"
+                    src="/logo1.jpeg"
                     alt="Logo"
                     className={`h-8 md:h-10 cursor-pointer transition-all duration-300 ${
                         isScrolled ? "invert" : ""

@@ -453,13 +453,13 @@ export const Hero = () => {
       <div className="mt-28 text-center">
         <p className="text-xs text-gray-400 tracking-widest uppercase">AI powered Audio Forensics</p>
         <h1 className="text-4xl md:text-6xl font-bold mt-4">Deepfake Voice Detection</h1>
-        <p className="text-sm text-gray-400 mt-3 max-w-[1000px] mx-auto text-center">
+        <p className="text-sm text-gray-400 mt-3 max-w-5xl mx-auto text-center">
           Detect synthetic voices instantly from microphone or live calls.
         </p>
       </div>
 
       {/* RECORD CARD */}
-      <div className="bg-neutral-900 mt-10 p-8 rounded-2xl w-full max-w-[500px] shadow-xl text-center">
+      <div className="bg-neutral-900 mt-10 p-8 rounded-2xl w-full max-w-lg shadow-xl text-center">
 
         <div className="mb-8">
           <Waveform isRecording={isRecording} analyserRef={analyserRef} />
@@ -487,7 +487,7 @@ export const Hero = () => {
 
       {/* ── RESULT CARD ── */}
       {result && (
-        <div className="mt-6 w-full max-w-[800px] mb-16" style={{ animation: "fadeSlideUp 0.45s ease forwards" }}>
+        <div className="mt-6 w-full max-w-2xl mb-16" style={{ animation: "fadeSlideUp 0.45s ease forwards" }}>
 
           {/* Verdict */}
           <div className="rounded-t-2xl px-6 pt-6 pb-5 border-t border-x"
@@ -564,6 +564,57 @@ export const Hero = () => {
 
       {/* Deepfake Detection Popup */}
       {showPopup && <DeepfakePopup onClose={() => setShowPopup(false)} />}
+
+      {/* Process section */}
+      <div id="process" className="mt-24 py-16 text-left max-w-3xl mx-auto rounded-3xl bg-white/5 border border-white/10 p-8 shadow-2xl">
+        <p className="text-xl uppercase tracking-widest text-cyan-300 mb-3 text-center">Process</p>
+        <h2 className="text-3xl font-bold text-white mb-6 text-center">How to use the app in 5 easy steps</h2>
+
+        <ol className="space-y-5 text-gray-300 text-base leading-relaxed list-decimal list-inside">
+          <li>
+            Open the app and allow microphone access when prompted. This lets the browser capture your voice for analysis.
+          </li>
+          <li>
+            Press the big red record button to start recording. Speak clearly for a few seconds so the system can analyze the audio properly.
+          </li>
+          <li>
+            The app uploads your captured audio and runs the deepfake detection model. Wait for the result to appear on the screen.
+          </li>
+          <li>
+            Review the analysis verdict and confidence score. If the app flags audio as suspicious or deepfake, treat the call as potentially fraudulent.
+          </li>
+          <li>
+            Sign in to view the protected Spam Call History. Use the history page to track detected calls and report suspicious activity if needed.
+          </li>
+        </ol>
+      </div>
+
+      {/* About section */}
+      <div id="about" className="mt-24 py-16 text-left max-w-3xl mx-auto rounded-3xl bg-white/5 border border-white/10 p-8 shadow-2xl">
+        <p className="text-xl uppercase tracking-widest text-red-700 mb-3 text-center">About the Project</p><br />
+        <h2 className="text-3xl font-bold text-white mb-4 text-center">Audio Deepfake Detection by DataDefenders</h2><br />
+        <p className="text-gray-300 leading-relaxed mb-4">
+          This application is a prototype <b><span style={{ color: "white" }}>AI-powered voice fraud prevention system</span></b> built to <b><span style={{ color: "white" }}>detect synthetic audio in real time</span></b>.
+          Users can record audio from the browser and analyze it instantly for deepfake characteristics.
+          Logged-in users can also view a <b><span style={{ color: "white" }}>protected history of spam and deepfake call detections</span></b>.
+          <br />
+        </p>
+        <p className="text-gray-300 leading-relaxed mb-4">
+          The system combines<b><span style={{ color: "white" }}> audio preprocessing, speech representation modeling, and classification logic </span></b>to provide an intuitive detection workflow for users.
+          It is designed for financial communication and customer support scenarios where voice fraud is a growing risk.
+        </p>
+       <br />
+        <div className="rounded-2xl bg-black/30 border border-white/10 p-5">
+          <p className="text-xl uppercase tracking-widest text-yellow-100 mb-3 text-center">Team <br /></p>
+          <br />
+          <ul className="list-inside space-y-2 text-yellow-300 flex justify-center gap-8 flex-col md:flex-row md:flex-wrap gap-x-6 color-orange-400 text-center padding-50">
+            <li>Suranjana Paul</li>
+            <li>Anusha Gupta</li>
+            <li>Pushpam Kumari</li>
+            <li>Anant Krishna Tiwari</li>
+          </ul>
+        </div>
+      </div>
 
       {/* Footer */}
       <div id="contact" className="mt-24 pb-16 text-center">
